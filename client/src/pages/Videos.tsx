@@ -84,33 +84,22 @@ export default function Videos() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Video URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." className="bg-secondary/50 border-white/10 focus:border-blue-500" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="thumbnailUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Thumbnail URL (for preview)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." className="bg-secondary/50 border-white/10 focus:border-blue-500" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormItem>
+                  <FormLabel>Video File</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="video/*" 
+                      className="bg-secondary/50 border-white/10 focus:border-blue-500" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          form.setValue("url", URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
 
                 <div className="pt-4 flex justify-end gap-2">
                   <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-white/5 hover:text-white">Cancel</Button>

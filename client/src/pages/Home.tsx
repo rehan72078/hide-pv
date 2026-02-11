@@ -1,17 +1,16 @@
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Camera, Video, Shield, Lock, Fingerprint } from "lucide-react";
+import { Camera, Video, Shield, Lock, Fingerprint, LogOut } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { SiGoogle } from "react-icons/si";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-  const { user } = useUser();
+  const { user, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleAuthRedirect = (path: string) => {
-    if (!user) {
-      window.location.href = "/login";
+    if (!isAuthenticated) {
+      window.location.href = "/api/login";
     } else {
       setLocation(path);
     }
@@ -87,18 +86,26 @@ export default function Home() {
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono uppercase tracking-widest">
                 <span className="w-8 h-[1px] bg-white/10"></span>
-                {user ? "Authenticated" : "Authentication Required"}
+                {isAuthenticated ? `Authenticated as ${user?.firstName || 'User'}` : "Authentication Required"}
                 <span className="w-8 h-[1px] bg-white/10"></span>
               </div>
               
-              {!user && (
+              {!isAuthenticated ? (
                 <a 
-                  href="/login"
+                  href="/api/login"
                   className="flex items-center gap-3 px-8 py-3 rounded-xl bg-white text-black font-semibold shadow-lg hover:scale-105 active:scale-100 transition-all duration-200"
                 >
-                  <SiGoogle className="w-5 h-5" />
+                  <Lock className="w-5 h-5" />
                   <span>Sign in with Google</span>
                 </a>
+              ) : (
+                <button 
+                  onClick={() => logout()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 text-white/60 hover:text-white transition-colors"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
               )}
               
               <div className="flex gap-6 mt-4 opacity-50">

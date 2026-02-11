@@ -2,6 +2,8 @@ import { pgTable, text, serial, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export * from "./models/auth";
+
 export const media = pgTable("media", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // 'photo' or 'video'

@@ -85,19 +85,24 @@ export default function Photos() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." className="bg-secondary/50 border-white/10 focus:border-primary" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormItem>
+                  <FormLabel>Photo File</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      className="bg-secondary/50 border-white/10 focus:border-primary" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Mocking file selection by using a local object URL
+                          // In a real app, you'd upload this to storage
+                          form.setValue("url", URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
 
                 <div className="pt-4 flex justify-end gap-2">
                   <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-white/5 hover:text-white">Cancel</Button>
