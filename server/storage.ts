@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   getMedia(): Promise<Media[]>;
   createMedia(item: InsertMedia): Promise<Media>;
+  deleteMedia(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -15,6 +16,10 @@ export class DatabaseStorage implements IStorage {
   async createMedia(insertMedia: InsertMedia): Promise<Media> {
     const [item] = await db.insert(media).values(insertMedia).returning();
     return item;
+  }
+
+  async deleteMedia(id: number): Promise<void> {
+    await db.delete(media).where(eq(media.id, id));
   }
 }
 

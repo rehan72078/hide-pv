@@ -18,5 +18,12 @@ export const api = {
         201: z.custom<typeof media.$inferSelect>(),
       },
     },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/media/:id' as const,
+      responses: {
+        200: z.object({ success: z.boolean() }),
+      },
+    },
   },
 };

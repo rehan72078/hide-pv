@@ -19,5 +19,11 @@ export async function registerRoutes(
     res.status(201).json(item);
   });
 
+  app.delete(api.media.delete.path, async (req, res) => {
+    const id = parseInt(req.params.id);
+    await storage.deleteMedia(id);
+    res.json({ success: true });
+  });
+
   return httpServer;
 }

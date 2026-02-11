@@ -21,7 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <ShieldCheck className="w-6 h-6 text-primary" />
               </div>
               <span className="text-xl font-bold font-display tracking-tight group-hover:text-glow transition-all">
-                Vault<span className="text-primary">.io</span>
+                Hide<span className="text-primary">.PV</span>
               </span>
             </div>
           </Link>
