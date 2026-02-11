@@ -44,7 +44,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Lock className="w-3 h-3" />
             <span>256-BIT ENCRYPTION ACTIVE</span>
           </div>
-          <p>© 2024 Secure Vault Inc. All rights reserved.</p>
+          <p>© 2024 Hide.PV. All rights reserved.</p>
+          <p className="mt-2 text-[10px] opacity-50">Publish on GitHub for live hosting support.</p>
         </footer>
       </div>
     </div>
