@@ -25,5 +25,13 @@ export const api = {
         200: z.object({ success: z.boolean() }),
       },
     },
+    deleteMany: {
+      method: 'POST' as const,
+      path: '/api/media/delete-many' as const,
+      input: z.object({ ids: z.array(z.number()) }),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+      },
+    },
   },
 };

@@ -25,5 +25,11 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.post(api.media.deleteMany.path, async (req, res) => {
+    const { ids } = api.media.deleteMany.input.parse(req.body);
+    await storage.deleteManyMedia(ids);
+    res.json({ success: true });
+  });
+
   return httpServer;
 }

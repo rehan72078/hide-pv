@@ -6,6 +6,7 @@ export interface IStorage {
   getMedia(): Promise<Media[]>;
   createMedia(item: InsertMedia): Promise<Media>;
   deleteMedia(id: number): Promise<void>;
+  deleteManyMedia(ids: number[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -20,6 +21,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMedia(id: number): Promise<void> {
     await db.delete(media).where(eq(media.id, id));
+  }
+
+  async deleteManyMedia(ids: number[]): Promise<void> {
+    const { inArray } = await import("drizzle-orm");
+    await db.delete(media).where(inArray(media.id, ids));
   }
 }
 
