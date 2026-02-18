@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useMedia, useCreateMedia } from "@/hooks/use-media";
 import { VaultCard } from "@/components/VaultCard";
-import { Plus, Video as VideoIcon, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Video as VideoIcon, Loader2, Trash2, CheckSquare, Square } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +19,33 @@ import { insertMediaSchema, type InsertMedia } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Videos() {
   const { data: mediaItems, isLoading } = useMedia();
   const createMedia = useCreateMedia();
   const [open, setOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteManyMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await apiRequest("POST", "/api/media/delete-many", { ids });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/media"] });
+      setSelectedIds([]);
+      setIsSelectMode(false);
+      toast({
+        title: "Deleted",
+        description: "Selected videos removed from vault",
+      });
+    },
+  });
 
   const form = useForm<InsertMedia>({
     resolver: zodResolver(insertMediaSchema),
@@ -33,85 +57,114 @@ export default function Videos() {
     },
   });
 
-  const onSubmit = (data: InsertMedia) => {
-    // Force type to video
-    createMedia.mutate({ ...data, type: "video" }, {
-      onSuccess: () => {
-        setOpen(false);
-        form.reset();
-      }
-    });
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const url = URL.createObjectURL(file);
+      createMedia.mutate({
+        type: "video",
+        title: file.name,
+        url: url,
+        thumbnailUrl: url,
+      });
+    }
+    setOpen(false);
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const videos = mediaItems?.filter(item => item.type === "video") || [];
 
   return (
     <Layout>
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold font-display text-white mb-2">Video Vault</h1>
           <p className="text-muted-foreground">Encrypted video storage</p>
         </div>
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0">
-              <Plus size={18} />
-              <span>Add Video</span>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-white/10 text-white sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl">Add Secure Video</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Add a video link and thumbnail to your vault.
-              </DialogDescription>
-            </DialogHeader>
+        <div className="flex items-center gap-3">
+          {videos.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsSelectMode(!isSelectMode);
+                setSelectedIds([]);
+              }}
+              className={cn(
+                "border-white/10 hover:bg-white/5",
+                isSelectMode && "bg-blue-600/20 border-blue-500/50 text-blue-400 hover:bg-blue-600/30"
+              )}
+            >
+              {isSelectMode ? "Cancel Selection" : "Select Videos"}
+            </Button>
+          )}
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Birthday Party Clip" className="bg-secondary/50 border-white/10 focus:border-blue-500" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <AnimatePresence>
+            {isSelectMode && selectedIds.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteManyMutation.mutate(selectedIds)}
+                  disabled={deleteManyMutation.isPending}
+                  className="gap-2"
+                >
+                  {deleteManyMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 size={18} />}
+                  <span>Delete ({selectedIds.length})</span>
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                <FormItem>
-                  <FormLabel>Video File</FormLabel>
-                  <FormControl>
-                    <Input 
+          {!isSelectMode && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                  <Plus size={18} />
+                  <span>Add Videos</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-white/10 text-white sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-2xl">Add Secure Videos</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Upload multiple videos to your encrypted vault.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 mt-4">
+                  <div className="p-8 border-2 border-dashed border-white/10 rounded-xl hover:border-blue-500/50 transition-colors group cursor-pointer relative">
+                    <input 
                       type="file" 
+                      multiple 
                       accept="video/*" 
-                      className="bg-secondary/50 border-white/10 focus:border-blue-500" 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          form.setValue("url", URL.createObjectURL(file));
-                        }
-                      }}
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                  </FormControl>
-                </FormItem>
-
-                <div className="pt-4 flex justify-end gap-2">
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-white/5 hover:text-white">Cancel</Button>
-                  <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white" disabled={createMedia.isPending}>
-                    {createMedia.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Save to Vault
-                  </Button>
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="p-4 bg-white/5 rounded-full mb-4 group-hover:bg-blue-500/20 transition-colors">
+                        <Plus className="w-8 h-8 text-muted-foreground group-hover:text-blue-500" />
+                      </div>
+                      <p className="text-sm font-medium text-white">Click to upload multiple videos</p>
+                      <p className="text-xs text-muted-foreground mt-1">Unlimited video storage enabled</p>
+                    </div>
+                  </div>
                 </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -134,7 +187,25 @@ export default function Videos() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
           {videos.map((video) => (
-            <VaultCard key={video.id} media={video} />
+            <div key={video.id} className="relative">
+              <VaultCard media={video} />
+              {isSelectMode && (
+                <div 
+                  className="absolute inset-0 z-30 flex items-start justify-start p-3 cursor-pointer bg-black/20 rounded-xl transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelect(video.id);
+                  }}
+                >
+                  <div className={cn(
+                    "p-1 rounded bg-black/60 border border-white/20 text-white",
+                    selectedIds.includes(video.id) && "bg-blue-600 border-blue-500"
+                  )}>
+                    {selectedIds.includes(video.id) ? <CheckSquare size={20} /> : <Square size={20} />}
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

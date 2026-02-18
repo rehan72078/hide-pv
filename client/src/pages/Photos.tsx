@@ -4,6 +4,7 @@ import { useMedia, useCreateMedia } from "@/hooks/use-media";
 import { VaultCard } from "@/components/VaultCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Image as ImageIcon, Loader2, Trash2, CheckSquare, Square } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
